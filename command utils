@@ -1,0 +1,27 @@
+##teste service connection
+kubectl run -it --rm --image=busybox debug -- /bin/sh
+nslookup kafka  # Should resolve to the IPv4 of the service
+nslookup kafka.default.svc.cluster.local  # Checking FQDN resolution
+
+#Kubernetes dashboard
+# Add kubernetes-dashboard repository
+helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+# Deploy a Helm Release named "kubernetes-dashboard" using the kubernetes-dashboard chart
+helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard --create-namespace --namespace kubernetes-dashboard
+or
+--if already installed
+helm repo update
+# Deploy a Helm Release named "kubernetes-dashboard" using the kubernetes-dashboard chart
+helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard --create-namespace --namespace kubernetes-dashboard
+
+kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
+ACCESS https://localhost:8443
+
+
+execute
+kubectl apply -f discovery/dashboard-adminuser.yaml
+kubectl apply -f discovery/dashboard-rolebind.yaml
+kubectl apply -f discovery/secret.yaml
+
+--get secret
+kubectl get secret admin-user -n kubernetes-dashboard -o jsonpath="{.data.token}" | base64 -d

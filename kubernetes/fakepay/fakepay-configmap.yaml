@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fakepay-configmap
+data:
+  SPRING_PROFILES_ACTIVE: dev
+  SPRING_CONFIG_IMPORT: "configserver:http://configserver:8080/"
+  CONFIGSERVER_APPLICATION_NAME: configserver
+  EUREKA_APPLICATION_NAME: eurekaserver
+  CUSTOMER_APPLICATION_NAME: customer
+  WALLET_APPLICATION_NAME: wallet
+  GATEWAY_APPLICATION_NAME: apigateway
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI: "http://keycloak:7080/realms/fakepaydev/protocol/openid-connect/certs"
+  SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: "kafka:9092" # Kafka broker URL for message binding
+  WALLET_DATASOURCE_URL: "jdbc:mysql://walletdb:3307/walletdb"
+  CUSTOMER_DATASOURCE_URL: "jdbc:mysql://customerdb:3306/customerdb"
+  SPRING.CLOUD.KUBERNETES.DISCOVERY.DISCOVERY-SERVER-URL: http://spring-cloud-kubernetes-discoveryserver:80/
+  SPRING_DATA_REDIS_HOST: redis

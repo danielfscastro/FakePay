@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: walletdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: walletdb
+  template:
+    metadata:
+      labels:
+        app: walletdb
+    spec:
+      containers:
+        - name: walletdb
+          image: mysql:latest
+          env:
+            - name: MYSQL_DATABASE
+              value: walletdb
+          envFrom:
+            - configMapRef:
+                name: mysql-config
+          ports:
+            - containerPort: 3306
+              name: walletdb
+          readinessProbe: # Health check equivalent
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          volumeMounts:
+            - name: walletdb-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: walletdb-storage
+          persistentVolumeClaim:
+            claimName: walletdb-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: walletdb
+spec:
+  ports:
+    - port: 3307
+      targetPort: 3306
+  selector:
+    app: walletdb
+  type: LoadBalancer

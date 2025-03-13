@@ -1,0 +1,11 @@
+---
+apiVersion: v1  # Indica a versão da API do Kubernetes para o recurso PersistentVolumeClaim.
+kind: PersistentVolumeClaim  # Define o tipo de recurso como PersistentVolumeClaim.
+metadata:  # Metadados que fornecem informações sobre o PersistentVolumeClaim.
+  name: keycloak-pvc  # Nome do PersistentVolumeClaim definido como "keycloak-pvc".
+spec:  # Especificações detalhadas do PersistentVolumeClaim.
+  accessModes:  # Modos de acesso solicitados para o PVC.
+    - ReadWriteOnce  # Solicita acesso de leitura e gravação por um único nó.
+  resources:  # Recursos solicitados para o volume.
+    requests:  # Solicitações de recursos.
+      storage: 1Gi  # Solicita um total de 5 gigabytes de armazenamento.

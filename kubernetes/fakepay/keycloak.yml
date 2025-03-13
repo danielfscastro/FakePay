@@ -1,0 +1,63 @@
+apiVersion: apps/v1  # Especifica a versão da API do Kubernetes utilizada para o recurso Deployment.
+kind: Deployment  # Indica que estamos criando um recurso do tipo Deployment.
+metadata:  # Metadados que fornecem informações sobre o Deployment.
+  name: keycloak  # Nome do Deployment definido como "keycloak".
+  labels:  # Rótulos para categorizar o recurso, facilitando a seleção.
+    app: keycloak  # Rótulo que associa este Deployment a um aplicativo específico "keycloak".
+spec:  # Especificações do Deployment.
+  replicas: 1  # Define que queremos 1 réplica (instância) do pod em execução.
+  selector:  # Seletores utilizados para identificar os pods gerenciados pelo Deployment.
+    matchLabels:  # Condição para corresponder os rótulos.
+      app: keycloak  # O Deployment selecionará os pods com o rótulo "app: keycloak".
+  template:  # Modelo para a criação dos pods.
+    metadata:  # Metadados para os pods.
+      labels:  # Rótulos aplicados aos pods gerados pelo Deployment.
+        app: keycloak  # Rótulo para identificar pods como parte do aplicativo "keycloak".
+    spec:  # Especificações do pod.
+      containers:  # Definição dos contêineres que serão executados no pod.
+        - name: keycloak  # Nome do contêiner, que será "keycloak".
+          image: quay.io/keycloak/keycloak:26.1.3  # Imagem do Keycloak sendo utilizada, com versão 26.1.3.
+          args: ["start-dev", "--verbose"]  # Argumentos passados para o contêiner no momento da inicialização.
+          env:  # Variáveis de ambiente para configurar o Keycloak.
+            - name: KEYCLOAK_ADMIN  # Nome da variável de ambiente.
+              value: "admin"  # Valor atribuído à variável, que define o nome de usuário administrador.
+            - name: KEYCLOAK_ADMIN_PASSWORD  # Nome da variável para a senha do administrador.
+              value: "admin"  # Valor atribuído à senha do administrador.
+            - name: KC_PROXY  # Nome da variável para configuração de proxy.
+              value: "edge"  # Valor que configura o proxy para modo "edge".
+            - name: KC_HEALTH_ENABLED  # Nome da variável para habilitar verificações de saúde.
+              value: "true"  # Valor que ativa a verificação de saúde.
+          ports:  # Exposição das portas para o contêiner.
+            - name: http  # Nome da porta exposta.
+              containerPort: 8080  # Porta que será escutada pelo contêiner.
+            - name: healthcheck  # Nome da porta exposta.
+              containerPort: 9000  # Porta que será escutada pelo contêiner.
+          readinessProbe:  # Configuração para a verificação de prontidão do contêiner.
+            httpGet:  # Usando uma requisição HTTP GET para verificação.
+              path: /health/ready  # Caminho do endpoint de prontidão.
+              port: 9000  # Porta onde o endpoint de prontidão está acessível.
+            initialDelaySeconds: 10  # Tempo de espera inicial antes da primeira verificação.
+          volumeMounts:  # Montagem de volumes no contêiner.
+            - name: keycloak-data  # Nome do volume a ser montado.
+              mountPath: "/opt/keycloak/data"  # Caminho no contêiner onde o volume será montado.
+      volumes:  # Definição dos volumes disponíveis para o pod.
+        - name: keycloak-data  # Nome do volume.
+          persistentVolumeClaim:  # Faz referência a um PersistentVolumeClaim para armazenamento persistente.
+            claimName: keycloak-pvc  # Nome do PVC que oferece o armazenamento para o Deployment.
+
+---
+
+apiVersion: v1  # Especifica a versão da API do Kubernetes utilizada para o recurso Service.
+kind: Service  # Indica que estamos criando um recurso do tipo Service, que facilita a comunicação entre pods.
+metadata:  # Metadados que fornecem informações sobre o Service.
+  name: keycloak  # Nome do Service, definido como "keycloak". Este nome é usado para identificar o recurso dentro do cluster.
+  labels:  # Rótulos que categorizarão o Service, facilitando a seleção e o agrupamento.
+    app: keycloak  # Rótulo que associa este Service ao aplicativo "keycloak", útil em operações de seleção.
+spec:  # Especificações que definem como o Service deve se comportar.
+  selector:  # Seletores que determinam quais pods devem ser acessados pelo Service.
+    app: keycloak  # O Service irá rotear requisições para pods que têm o rótulo "app" com valor "keycloak".
+  type: LoadBalancer  # Define que o tipo deste Service é LoadBalancer, que permite o uso de um balanceador de carga externo.
+  ports:  # Define as portas expostas pelo Service.
+    - name: http  # Nome da porta exposta, facilitando a identificação e referência.
+      port: 7080  # Porta que será utilizada para o acesso externo ao Service.
+      targetPort: 8080  # Porta no contêiner (dentro do pod) que o tráfego será direcionado. Este é o ponto em que o Keycloak está escutando dentro do pod.

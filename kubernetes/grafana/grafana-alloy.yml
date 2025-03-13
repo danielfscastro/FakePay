@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alloy
+  labels:
+    app: alloy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alloy
+  template:
+    metadata:
+      labels:
+        app: alloy
+    spec:
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.0.0
+          command: ["alloy"]  # This assumes 'alloy' is the executable based on inspection
+          args: [
+            "run",
+            "--server.http.listen-addr=0.0.0.0:12345",
+            "--storage.path=/var/lib/alloy/data",
+            "/etc/alloy/config.alloy"
+          ]
+          ports:
+            - containerPort: 12345
+          volumeMounts:
+            - name: alloy-config
+              mountPath: /etc/alloy/config.alloy
+              subPath: config.alloy
+              readOnly: true
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: alloy-config
+          configMap:
+            name: alloy-config-map
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy
+spec:
+  selector:
+    app: alloy
+  ports:
+    - name: http
+      port: 12345
+      targetPort: 12345
+  type: ClusterIP

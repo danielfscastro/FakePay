@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promtail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: promtail
+  template:
+    metadata:
+      labels:
+        app: promtail
+    spec:
+      containers:
+        - name: promtail
+          image: grafana/promtail:latest
+          ports:
+            - containerPort: 9080  # This line is optional, change based on your config
+          command: ["promtail","-config.file=/etc/promtail/config.yaml"]
+          volumeMounts:
+            - name: promtail-config-volume
+              mountPath: /etc/promtail/config.yaml
+              subPath: config.yaml
+            - name: var-log
+              mountPath: /var/log
+      volumes:
+        - name: promtail-config-volume
+          configMap:
+            name: promtail-config
+        - name: var-log
+          hostPath:
+            path: /var/log  # Maps to the host's /var/log directory
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promtail
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9080  # Use the actual port if needed
+      targetPort: 9080
+  selector:
+    app: promtail

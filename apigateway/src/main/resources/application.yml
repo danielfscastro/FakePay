@@ -1,0 +1,85 @@
+server:
+    port: 8000  # Port on which the server will listen for requests
+    forward-headers-strategy: framework  # Strategy for handling forwarded headers
+
+spring:
+    application:
+        name: "apigateway"  # Name of the Spring application
+    profiles:
+        active: "dev"  # Active profile for the application (development profile)
+    cloud:
+        gateway:
+            httpclient:
+                connect-timeout: 1000  # Connection timeout for HTTP requests
+                response-timeout: 10s  # Response timeout for HTTP requests
+        kubernetes:
+            discovery:
+                enabled: true
+                all-namespaces: true
+        discovery:
+            client:
+                health-indicator:
+                    enabled: false
+    data:
+      redis:
+        host: localhost  # Hostname or IP address of the Redis server
+        port: 6379  # Port number of the Redis server
+        connection-timeout: 2s  # Connection timeout for Redis
+        read-timeout: 1s  # Read timeout for Redis
+
+        config:
+            import: "optional:configserver:http://localhost:8080" # Import configuration from a config server
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    jwk-set-uri: ${JWK_SET_URI:http://localhost:7080/realms/fakepaydev/protocol/openid-connect/certs}
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "*"  # Expose all management endpoints over the web
+    endpoint:
+        gateway:
+            enabled: true #show gateway endpoint on actuator
+        health:
+            probes:
+                enabled: true  # Enable health probes for detailed checks
+    info:
+        env:
+            enabled: true  # Enable environment information in the info endpoint
+    health:
+        readiness-state:
+            enabled: true  # Enable readiness checks
+        liveness-state:
+            enabled: true  # Enable liveness checks
+    metrics:
+        tags:
+            application: ${spring.application.name}
+
+info:
+    app:
+        name: "apigateway"  # Application name for the info endpoint
+        description: "ApiGateway Application"  # Description of the application
+
+logging:
+    level:
+        com:
+            fakepay:
+                apigateway: DEBUG
+        org:
+            springframework: INFO
+
+
+    pattern:
+        level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"  # Custom log pattern
+
+resilience4j.circuitbreaker:
+    configs:
+        default:
+            slidingWindowSize: 10
+            permittedNumberOfCallsInHalfOpenState: 2
+            failureRateThreshold: 50
+            waitDurationInOpenState: 10000
+

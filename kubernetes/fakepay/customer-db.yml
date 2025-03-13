@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customerdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customerdb
+  template:
+    metadata:
+      labels:
+        app: customerdb
+    spec:
+      containers:
+        - name: customerdb
+          image: mysql
+          env:
+            - name: MYSQL_DATABASE
+              value: customerdb
+          envFrom:
+            - configMapRef:
+                name: mysql-config
+          ports:
+            - containerPort: 3306
+          readinessProbe: # Health check equivalent
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          volumeMounts:
+            - name: customerdb-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: customerdb-storage
+          persistentVolumeClaim:
+            claimName: customerdb-pvc
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: customerdb
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: customerdb
+  type: LoadBalancer
